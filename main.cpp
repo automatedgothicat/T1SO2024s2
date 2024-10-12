@@ -6,13 +6,15 @@
 #include <vector>
 #include <cmath>
 
-//assumindo que a matriz ta pronta
-//calcula o numero de submatrizes pelo tamanho
-//guarda todas elas em um vetor de submatriz
-//o vetor tem que estar tendo da thread
-//dentro da sessão critica apaga posição do vetor
-//outra sessão critica pra somar quando for primo
-//quando o vetor acabar encerra thread
+/*
+assumindo que a matriz ta pronta
+calcula o numero de submatrizes pelo tamanho
+guarda todas elas em um vetor de submatriz
+o vetor tem que estar tendo da thread
+dentro da sessão critica apaga posição do vetor
+outra sessão critica pra somar quando for primo
+quando o vetor acabar encerra thread
+*/
 
 using namespace std;
 
@@ -31,8 +33,8 @@ int linhas, colunas, seed;
 
 void testaParametro(void* PARAMETRO);
 bool ehPrimo(int num);
-void criarMatriz(int linha, int coluna, int seed);
-void destroiMatriz(int linha);
+void criarMatriz();
+void destroiMatriz();
 int contagemSerial();
 
 int main()
@@ -60,8 +62,16 @@ int main()
         case 1: {
             cout << "Digite o numero de linhas: ";
             cin >> linhas;
+            do {
+                cout << "Digite um valor maior que 0: ";
+                cin >> linhas;
+            } while (linhas <= 0);
             cout << "Digite o numero de colunas: ";
             cin >> colunas;
+            do {
+                cout << "Digite um valor maior que 0: ";
+                cin >> colunas;
+            } while (colunas <= 0);
             cout << "Matriz de " << linhas << " x " << colunas << " definida.\n";
             break;
         }
@@ -73,7 +83,7 @@ int main()
         }
         case 3: {
             if (linhas > 0 && colunas > 0) {
-                criarMatriz(linhas, colunas, seed);
+                criarMatriz();
                 cout << "Matriz preenchida com numeros aleatorios.\n";
             }
             else {
@@ -102,7 +112,7 @@ int main()
         }
         case 8: {
             cout << "Encerrando o programa...\n";
-            destroiMatriz(linhas);  
+            destroiMatriz();  
             break;
         }
         default: {
@@ -170,22 +180,22 @@ bool ehPrimo(int num) {
     return true;
 }
 
-void criarMatriz(int linha, int coluna, int seed) {
+void criarMatriz() {
     srand(seed);
 
-    matriz = new int* [linha];
-    for (int i = 0; i < linha; i++)
-        matriz[i] = new int[coluna];
+    matriz = new int* [linhas];
+    for (int i = 0; i < linhas; i++)
+        matriz[i] = new int[colunas];
 
-    for (int i = 0; i < linha; i++) {
-        for (int j = 0; j < coluna; j++) {
+    for (int i = 0; i < linhas; i++) {
+        for (int j = 0; j < colunas; j++) {
             matriz[i][j] = rand() % 100000000;
         }
     }
 }
 
-void destroiMatriz(int linha) {
-    for (int i = 0; i < linha; i++)
+void destroiMatriz() {
+    for (int i = 0; i < linhas; i++)
         delete[] matriz[i];
     delete[] matriz;
 }
