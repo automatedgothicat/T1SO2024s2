@@ -34,7 +34,7 @@ HANDLE hMutex1;
 HANDLE hMutex2;
 HANDLE hMutex3;
 int** matriz;
-int qtdprimos;
+int qtdprimos,qtdprimosemserie;
 int linhas, colunas, seed;
 vector<submatriz> vetorsubmatriz;
 
@@ -50,7 +50,7 @@ int main()
 {
     int nThreads = 0; //2 nucleos reais com 4 virtuais
     int escolhaMenu;
-    clock_t ini, fim, total;
+    clock_t serieIni, serieFim, serieTotal;
 
     //vector<HANDLE> hThread;
     //vector<PARAMETROS> vetorparametros;
@@ -66,7 +66,7 @@ int main()
             "|3) Preencher a matriz com numeros aleatorios                      |\n" <<
             "|4) Definir o tamanho das submatrizes                              |\n" <<
             "|5) Definir o numero de Threads                                    |\n" <<
-            //"|6) Executar                                                       |\n" <<
+            "|6) Executar                                                       |\n" <<
             "|7) Visualizar o tempo de execucao e quantidade de numeros primos  |\n" <<
             "|8) Encerrar                                                       |\n" <<
             "--------------------------------------------------------------------\n" <<
@@ -106,8 +106,8 @@ int main()
                 cout << "Primeiro Defina as Threads\n" << endl;
                 break;
             }
-            setarSubmatrizes(nThreads);
             cout << "Matriz dividida em " << nThreads << " submatrizes\n" << endl;
+            setarSubmatrizes(nThreads);
             break;
         }
         case 5: {
@@ -135,20 +135,23 @@ int main()
                 cout << "Primeiro Defina as Threads" << endl;
                 break;
             }
+            serieIni = clock();
+            qtdprimosemserie = contagemSerial();
+            serieFim = clock();
+            serieTotal = serieFim - serieIni;
+            break;
         }
         case 7: {
             if (matriz != nullptr) {
-                ini = clock();
-                qtdprimos = contagemSerial();
-                fim = clock();
-                total = fim - ini;
-                cout << "Quantidade de numeros primos: " << qtdprimos << endl;
-                if (total > 1000) {
-                    cout << "Tempo de execucao: " << total/1000 << " segundos\n" << endl;
+                cout << "Contagem em serie:" << endl;
+                cout << "Quantidade de numeros primos: " << qtdprimosemserie << endl;
+                if (serieTotal > 1000) {
+                    cout << "Tempo de execucao: " << serieTotal / 1000 << " segundos\n" << endl;
                 }
                 else {
-                    cout << "Tempo de execucao: " << total << " milisegundos\n" << endl;
+                    cout << "Tempo de execucao: " << serieTotal << " milisegundos\n" << endl;
                 }
+                cout << "Contagem em paralelo:" << endl;
             }
             else {
                 cout << "Preencha a matriz com números aleatorios primeiro.\n";
