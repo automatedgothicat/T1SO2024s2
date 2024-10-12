@@ -10,7 +10,7 @@
 assumindo que a matriz ta pronta
 calcula o numero de submatrizes pelo tamanho
 guarda todas elas em um vetor de submatriz
-o vetor tem que estar tendo da thread
+o vetor tem que estar dentro da thread
 dentro da sessão critica apaga posição do vetor
 outra sessão critica pra somar quando for primo
 quando o vetor acabar encerra thread
@@ -24,19 +24,27 @@ typedef struct {
     bool stopThread;
 }PARAMETROS;
 
+typedef struct {
+    int startline;
+    int endline;
+    bool escolhida;
+}submatriz;
+
 HANDLE hMutex1;
 HANDLE hMutex2;
 HANDLE hMutex3;
 int** matriz;
 int qtdprimos;
 int linhas, colunas, seed;
+vector<submatriz> vetorsubmatriz;
 
 void testaParametro(void* PARAMETRO);
-bool ehPrimo(int num);
 int checkInt(int num);
+bool ehPrimo(int num);
 void criarMatriz();
 void destroiMatriz();
 int contagemSerial();
+void setarSubmatrizes(int nthreads);
 
 int main()
 {
@@ -44,14 +52,20 @@ int main()
     int escolhaMenu;
     clock_t ini, fim, total;
 
+    //vector<HANDLE> hThread;
+    //vector<PARAMETROS> vetorparametros;
+    //PARAMETROS adicionarVetor;
+    
+    //hMutex1 = CreateMutex(NULL, FALSE, NULL);
+
     do {
         std::cout <<
             "--------------------------------Menu--------------------------------\n" <<
             "|1) Definir o tamanho da matriz                                    |\n" <<
             "|2) Definir semente para o gerador de numeros aleatorios           |\n" <<
             "|3) Preencher a matriz com numeros aleatorios                      |\n" <<
-            //"|4) Definir o tamanho das submatrizes                              |\n" <<
-            //"|5) Definir o numero de Threads                                    |\n" <<
+            "|4) Definir o tamanho das submatrizes                              |\n" <<
+            "|5) Definir o numero de Threads                                    |\n" <<
             //"|6) Executar                                                       |\n" <<
             "|7) Visualizar o tempo de execucao e quantidade de numeros primos  |\n" <<
             "|8) Encerrar                                                       |\n" <<
@@ -87,6 +101,41 @@ int main()
             }
             break;
         }
+        case 4: {
+            if (nThreads == 0) {
+                cout << "Primeiro Defina as Threads\n" << endl;
+                break;
+            }
+            setarSubmatrizes(nThreads);
+            cout << "Matriz dividida em " << nThreads << " submatrizes\n" << endl;
+            break;
+        }
+        case 5: {
+            if (nThreads != 0) {
+                for (int i = 0; i < nThreads; i++) {
+                    //CloseHandle(hThread[i]);
+                }
+                for (int i = 0; i < nThreads; i++) {
+                    //hThread.pop_back();
+                    //vetorparametros.pop_back();
+                }
+            }
+            cout << "Digite o numero de threads a ser utilizado: ";
+            cin >> nThreads;
+            seed = checkInt(nThreads);
+            cout << "Threads criadas: " << nThreads << endl;
+            break;
+        }
+        case 6: {
+            if (linhas <= 0 && colunas <= 0) {
+                cout << "Primeiro gere a matriz" << endl;
+                break;
+            }
+            if (nThreads == 0) {
+                cout << "Primeiro Defina as Threads" << endl;
+                break;
+            }
+        }
         case 7: {
             if (matriz != nullptr) {
                 ini = clock();
@@ -119,12 +168,7 @@ int main()
     } while (escolhaMenu != 8);
 
     /*
-    vector<HANDLE> hThread;
-    vector<PARAMETROS> vetorparametros;
-    PARAMETROS adicionarVetor;
-
-    hMutex1 = CreateMutex(NULL, FALSE, NULL);
-
+    //inicializa o vetor de parametros por meio de uma struct adicionarvetor auxiliar
     for (int i = 0; i < nThreads; i++)
     {
         adicionarVetor.id = i;
@@ -133,24 +177,36 @@ int main()
         vetorparametros.push_back(adicionarVetor);
     }
 
+    //configura as threads com a função passada de argumento, no caso testaparametro, e o endereço do vetor usado
     for (int i = 0; i < nThreads; i++)
     {
         hThread.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&testaParametro, &vetorparametros[i], CREATE_SUSPENDED, NULL));
     }
 
+    //inicializa cada thread no vetor hthreads que estavam suspensas
     for (int i = 0; i < nThreads; i++)
     {
         ResumeThread(hThread[i]);
     }
 
+    //aguarda que todas as threads executem corretamente
     WaitForMultipleObjects(nThreads, hThread.data(), TRUE, INFINITE);
 
+    //finaliza cada thread no vetor de threads
     for (int i = 0; i < nThreads; i++)
     {
         CloseHandle(hThread[i]);
     }
     
     */
+}
+
+int checkInt(int num) {
+    while (num <= 0) {
+        cout << "Digite um valor maior que 0: ";
+        cin >> num;
+    }
+    return num;
 }
 
 void testaParametro(void* parametroFuncao)
@@ -164,14 +220,6 @@ void testaParametro(void* parametroFuncao)
     ReleaseMutex(hMutex1); //final seção critica
 
     _endthread();
-}
-
-int checkInt(int num) {
-    while (num <= 0) {
-        cout << "Digite um valor maior que 0: ";
-        cin >> num;
-    }
-    return num;
 }
 
 bool ehPrimo(int num) {
@@ -214,4 +262,29 @@ int contagemSerial() {
         }
     }
     return nprimos;
+}
+
+void setarSubmatrizes(int nthreads) {
+    int linhaspthread = linhas / nthreads;
+    int restolinhas = linhas % nthreads;
+    submatriz adicionarSubmatriz;
+
+    int linhaAtual = 0;
+    for (int i = 0; i < nthreads; i++) {
+        int linhaInicio = linhaAtual;
+        int linhaFim = linhaInicio + linhaspthread;
+
+        if (i < restolinhas) {
+            linhaFim++;
+        }
+
+        adicionarSubmatriz.startline = linhaInicio;
+        adicionarSubmatriz.endline = linhaFim;
+        adicionarSubmatriz.escolhida = false;
+        vetorsubmatriz.push_back(adicionarSubmatriz);
+
+        cout << "O tamanho da submatriz" << i << " e: " << adicionarSubmatriz.endline - adicionarSubmatriz.startline << " x " << colunas << endl;
+
+        linhaAtual = linhaFim;
+    }
 }
