@@ -33,13 +33,14 @@ int linhas, colunas, seed;
 
 void testaParametro(void* PARAMETRO);
 bool ehPrimo(int num);
+int checkInt(int num);
 void criarMatriz();
 void destroiMatriz();
 int contagemSerial();
 
 int main()
 {
-    int nThreads = 4; //2 nucleos reais com 4 virtuais
+    int nThreads = 0; //2 nucleos reais com 4 virtuais
     int escolhaMenu;
     clock_t ini, fim, total;
 
@@ -62,22 +63,17 @@ int main()
         case 1: {
             cout << "Digite o numero de linhas: ";
             cin >> linhas;
-            do {
-                cout << "Digite um valor maior que 0: ";
-                cin >> linhas;
-            } while (linhas <= 0);
+            linhas = checkInt(linhas);
             cout << "Digite o numero de colunas: ";
             cin >> colunas;
-            do {
-                cout << "Digite um valor maior que 0: ";
-                cin >> colunas;
-            } while (colunas <= 0);
+            colunas = checkInt(colunas);
             cout << "Matriz de " << linhas << " x " << colunas << " definida.\n";
             break;
         }
         case 2: {
             cout << "Digite a semente para o gerador de numeros aleatorios: ";
             cin >> seed;
+            seed = checkInt(seed);
             cout << "Semente definida: " << seed << endl;
             break;
         }
@@ -168,6 +164,14 @@ void testaParametro(void* parametroFuncao)
     ReleaseMutex(hMutex1); //final seção critica
 
     _endthread();
+}
+
+int checkInt(int num) {
+    while (num <= 0) {
+        cout << "Digite um valor maior que 0: ";
+        cin >> num;
+    }
+    return num;
 }
 
 bool ehPrimo(int num) {
