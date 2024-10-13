@@ -86,12 +86,15 @@ int main()
             break;
         }
         case 3: {
+            if (seed == 0) {
+                cout << "Defina a semente primeiro." << endl;
+            }
             if (linhas > 0 && colunas > 0) {
                 criarMatriz();
-                cout << "Matriz preenchida com numeros aleatorios.\n";
+                cout << "Matriz preenchida com numeros aleatorios." << endl;
             }
             else {
-                cout << "Defina o tamanho da matriz antes de preenche-la.\n";
+                cout << "Defina o tamanho da matriz antes de preenche-la." << endl;
             }
             break;
         }
@@ -159,15 +162,6 @@ int main()
             paraleloFim = clock();
             paraleloTotal = paraleloFim - paraleloIni;
 
-            //finaliza cada thread no vetor de threads
-            for (int i = 0; i < nThreads; i++)
-            {
-                CloseHandle(hThread[i]);
-            }
-
-            CloseHandle(hMutex1);
-            CloseHandle(hMutex2);
-
             cout << "Contagem de primos paralela completa.\n" << endl;
             break;
         }
@@ -197,6 +191,15 @@ int main()
         }
         case 8: {
             cout << "Encerrando o programa...\n";
+            //finaliza cada thread no vetor de threads
+            for (int i = 0; i < nThreads; i++)
+            {
+                CloseHandle(hThread[i]);
+            }
+
+            CloseHandle(hMutex1);
+            CloseHandle(hMutex2);
+
             destroiMatriz();  
             break;
         }
