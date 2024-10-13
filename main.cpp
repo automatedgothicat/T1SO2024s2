@@ -19,12 +19,6 @@ quando o vetor acabar encerra thread
 using namespace std;
 
 typedef struct {
-    int id;
-    int count;
-    bool stopThread;
-}PARAMETROS;
-
-typedef struct {
     int startline;
     int endline;
     bool escolhida;
@@ -38,7 +32,7 @@ int qtdprimos,qtdprimosemserie;
 int linhas, colunas, seed;
 vector<submatriz> vetorsubmatriz;
 
-void testaParametro(void* PARAMETRO);
+void calculaMatriz(void* submatrizes);
 int checkInt(int num);
 bool ehPrimo(int num);
 void criarMatriz();
@@ -51,25 +45,23 @@ int main()
     int nThreads = 0; //2 nucleos reais com 4 virtuais
     int escolhaMenu;
     clock_t serieIni, serieFim, serieTotal;
-
-    //vector<HANDLE> hThread;
-    //vector<PARAMETROS> vetorparametros;
-    //PARAMETROS adicionarVetor;
+    clock_t paraleloIni, paraleloFim, paraleloTotal;
+    vector<HANDLE> hThread;
     
-    //hMutex1 = CreateMutex(NULL, FALSE, NULL);
+    hMutex1 = CreateMutex(NULL, FALSE, NULL);
+    hMutex2 = CreateMutex(NULL, FALSE, NULL);
 
     do {
         std::cout <<
-            "--------------------------------Menu--------------------------------\n" <<
-            "|1) Definir o tamanho da matriz                                    |\n" <<
-            "|2) Definir semente para o gerador de numeros aleatorios           |\n" <<
-            "|3) Preencher a matriz com numeros aleatorios                      |\n" <<
-            "|4) Definir o tamanho das submatrizes                              |\n" <<
-            "|5) Definir o numero de Threads                                    |\n" <<
-            "|6) Executar                                                       |\n" <<
-            "|7) Visualizar o tempo de execucao e quantidade de numeros primos  |\n" <<
-            "|8) Encerrar                                                       |\n" <<
-            "--------------------------------------------------------------------\n" <<
+            "x --------------------------- x Menu x --------------------------- x\n" <<
+            "1) Definir o tamanho da matriz                                    \n" <<
+            "2) Definir semente para o gerador de numeros aleatorios           \n" <<
+            "3) Preencher a matriz com numeros aleatorios                      \n" <<
+            "4) Definir o tamanho das submatrizes                              \n" <<
+            "5) Definir o numero de Threads                                    \n" <<
+            "6) Executar                                                       \n" <<
+            "7) Visualizar o tempo de execucao e quantidade de numeros primos  \n" <<
+            "8) Encerrar                                                       \n" <<
             "Opcao: ";
         cin >> escolhaMenu;
         switch (escolhaMenu)
@@ -113,11 +105,11 @@ int main()
         case 5: {
             if (nThreads != 0) {
                 for (int i = 0; i < nThreads; i++) {
-                    //CloseHandle(hThread[i]);
+                    CloseHandle(hThread[i]);
                 }
                 for (int i = 0; i < nThreads; i++) {
-                    //hThread.pop_back();
-                    //vetorparametros.pop_back();
+                    hThread.pop_back();
+                    vetorsubmatriz.pop_back();
                 }
             }
             cout << "Digite o numero de threads a ser utilizado: ";
@@ -139,6 +131,34 @@ int main()
             qtdprimosemserie = contagemSerial();
             serieFim = clock();
             serieTotal = serieFim - serieIni;
+
+            //configura as threads com a função passada de argumento e o endereço do vetor usado
+            for (int i = 0; i < nThreads; i++)
+            {
+                hThread.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&calculaMatriz, &vetorsubmatriz[i], CREATE_SUSPENDED, NULL));
+            }
+
+            //inicializa cada thread no vetor hthreads que estavam suspensas
+            paraleloIni = clock();
+            for (int i = 0; i < nThreads; i++)
+            {
+                ResumeThread(hThread[i]);
+            }
+
+            //aguarda que todas as threads executem corretamente
+            WaitForMultipleObjects(nThreads, hThread.data(), TRUE, INFINITE);
+            paraleloFim = clock();
+            paraleloTotal = paraleloFim - paraleloIni;
+
+            //finaliza cada thread no vetor de threads
+            for (int i = 0; i < nThreads; i++)
+            {
+                CloseHandle(hThread[i]);
+            }
+
+            CloseHandle(hMutex1);
+            CloseHandle(hMutex2);
+
             break;
         }
         case 7: {
@@ -152,6 +172,13 @@ int main()
                     cout << "Tempo de execucao: " << serieTotal << " milisegundos\n" << endl;
                 }
                 cout << "Contagem em paralelo:" << endl;
+                cout << "Quantidade de numeros primos: " << qtdprimos << endl;
+                if (paraleloTotal > 1000) {
+                    cout << "Tempo de execucao: " << paraleloTotal / 1000 << " segundos\n" << endl;
+                }
+                else {
+                    cout << "Tempo de execucao: " << paraleloTotal << " milisegundos\n" << endl;
+                }
             }
             else {
                 cout << "Preencha a matriz com números aleatorios primeiro.\n";
@@ -169,39 +196,6 @@ int main()
         }
         }
     } while (escolhaMenu != 8);
-
-    /*
-    //inicializa o vetor de parametros por meio de uma struct adicionarvetor auxiliar
-    for (int i = 0; i < nThreads; i++)
-    {
-        adicionarVetor.id = i;
-        adicionarVetor.count = 0;
-        adicionarVetor.stopThread = FALSE;
-        vetorparametros.push_back(adicionarVetor);
-    }
-
-    //configura as threads com a função passada de argumento, no caso testaparametro, e o endereço do vetor usado
-    for (int i = 0; i < nThreads; i++)
-    {
-        hThread.push_back(CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&testaParametro, &vetorparametros[i], CREATE_SUSPENDED, NULL));
-    }
-
-    //inicializa cada thread no vetor hthreads que estavam suspensas
-    for (int i = 0; i < nThreads; i++)
-    {
-        ResumeThread(hThread[i]);
-    }
-
-    //aguarda que todas as threads executem corretamente
-    WaitForMultipleObjects(nThreads, hThread.data(), TRUE, INFINITE);
-
-    //finaliza cada thread no vetor de threads
-    for (int i = 0; i < nThreads; i++)
-    {
-        CloseHandle(hThread[i]);
-    }
-    
-    */
 }
 
 int checkInt(int num) {
@@ -212,15 +206,27 @@ int checkInt(int num) {
     return num;
 }
 
-void testaParametro(void* parametroFuncao)
+void calculaMatriz(void* submatrizes)
 {
-    PARAMETROS* param = (PARAMETROS*)parametroFuncao;
+    //cria um ponteiro pra parametro que recebe os argumentos da função
+    submatriz* subdathread = (submatriz*)submatrizes;
+    int primosLocais = 0;
+
+    for (int i = subdathread->startline; i < subdathread->endline; i++) {
+        for (int j = 0; j < colunas; j++) {
+            if (ehPrimo(matriz[i][j])) {
+                primosLocais++; 
+            }
+        }
+    }
 
     WaitForSingleObject(hMutex1, INFINITE);//inicio seção critica
-    cout << "thread id: " << param->id << endl;
-    cout << "valor count: " << param->count << endl;
-    cout << "stop thread: " << param->stopThread << endl;
+    vetorsubmatriz.pop_back();
     ReleaseMutex(hMutex1); //final seção critica
+
+    WaitForSingleObject(hMutex2, INFINITE);//inicio seção critica
+    qtdprimos += primosLocais;
+    ReleaseMutex(hMutex2); //final seção critica
 
     _endthread();
 }
