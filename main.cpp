@@ -102,10 +102,10 @@ int main()
             }
             cout << "Digite o numero de linhas: ";
             cin >> slinha;
-            linhas = checkInt(slinha);
+            slinha = checkInt(slinha);
             cout << "Digite o numero de colunas: ";
             cin >> scoluna;
-            colunas = checkInt(scoluna);
+            scoluna = checkInt(scoluna);
             cout << "Matriz de " << slinha << " x " << scoluna << " definida.\n";
             setarSubmatrizes(slinha,scoluna);
             break;
@@ -304,22 +304,19 @@ void setarSubmatrizes(int sublinhas, int subcolunas) {
     int colunaAtual = 0;
     int totalsubmatrizes = 0;
 
-    for (linhaAtual = 0; linhaAtual <= linhas; linhaAtual += sublinhas) {
-        for (colunaAtual = 0; colunaAtual <= colunas; colunaAtual += subcolunas) {
+    for (linhaAtual = 0; linhaAtual < linhas; linhaAtual += sublinhas) {
+        for (colunaAtual = 0; colunaAtual < colunas; colunaAtual += subcolunas) {
             adicionarSubmatriz.startline = linhaAtual;
-            adicionarSubmatriz.endline = linhaAtual + sublinhas;
+            adicionarSubmatriz.endline = min(linhaAtual + sublinhas, linhas);
             adicionarSubmatriz.startcol = colunaAtual;
-            adicionarSubmatriz.endcol = colunaAtual + subcolunas;
+            adicionarSubmatriz.endcol = min(colunaAtual + subcolunas, colunas);
 
-            cout << "Submatriz " << totalsubmatrizes + 1 << " definida de "
-                << adicionarSubmatriz.startline << " a " << adicionarSubmatriz.endline - 1
-                << " nas linhas e de " << adicionarSubmatriz.startcol << " a "
-                << adicionarSubmatriz.endcol - 1 << " nas colunas." << endl;
-
-            totalsubmatrizes++;
-
-            adicionarSubmatriz.escolhida = false;
-            vetorsubmatriz.push_back(adicionarSubmatriz);
+            if (adicionarSubmatriz.startline < adicionarSubmatriz.endline &&
+                adicionarSubmatriz.startcol < adicionarSubmatriz.endcol) {
+                totalsubmatrizes++;
+                adicionarSubmatriz.escolhida = false;
+                vetorsubmatriz.push_back(adicionarSubmatriz);
+            }
         }
     }
     cout << "Foram criadas " << totalsubmatrizes << " submatrizes" << endl;
