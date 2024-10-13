@@ -44,8 +44,8 @@ int main()
 {
     int nThreads = 0; //2 nucleos reais com 4 virtuais
     int escolhaMenu;
-    clock_t serieIni, serieFim, serieTotal;
-    clock_t paraleloIni, paraleloFim, paraleloTotal;
+    clock_t serieIni, serieFim, serieTotal = 0;
+    clock_t paraleloIni, paraleloFim, paraleloTotal = 0;
     vector<HANDLE> hThread;
     
     hMutex1 = CreateMutex(NULL, FALSE, NULL);
@@ -53,7 +53,7 @@ int main()
 
     do {
         std::cout <<
-            "x --------------------------- x Menu x --------------------------- x\n" <<
+            "\nx --------------------------- x Menu x --------------------------- x\n" <<
             "1) Definir o tamanho da matriz                                    \n" <<
             "2) Definir semente para o gerador de numeros aleatorios           \n" <<
             "3) Preencher a matriz com numeros aleatorios                      \n" <<
@@ -159,6 +159,7 @@ int main()
             CloseHandle(hMutex1);
             CloseHandle(hMutex2);
 
+            cout << "Contagem de primos completa.\n" << endl;
             break;
         }
         case 7: {
