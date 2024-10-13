@@ -21,12 +21,13 @@ using namespace std;
 typedef struct {
     int startline;
     int endline;
+    int startcol;
+    int endcol;
     bool escolhida;
 }submatriz;
 
 HANDLE hMutex1;
 HANDLE hMutex2;
-HANDLE hMutex3;
 int** matriz;
 int qtdprimos,qtdprimosemserie;
 int linhas, colunas, seed;
@@ -38,11 +39,12 @@ bool ehPrimo(int num);
 void criarMatriz();
 void destroiMatriz();
 int contagemSerial();
-void setarSubmatrizes(int nthreads);
+void setarSubmatrizes(int sublinhas, int subcolunas);
 
 int main()
 {
     int nThreads = 0; //2 nucleos reais com 4 virtuais
+    int slinha, scoluna;
     int escolhaMenu;
     clock_t serieIni, serieFim, serieTotal = 0;
     clock_t paraleloIni, paraleloFim, paraleloTotal = 0;
@@ -98,8 +100,14 @@ int main()
                 cout << "Primeiro Defina as Threads\n" << endl;
                 break;
             }
-            cout << "Matriz dividida em " << nThreads << " submatrizes\n" << endl;
-            setarSubmatrizes(nThreads);
+            cout << "Digite o numero de linhas: ";
+            cin >> slinha;
+            linhas = checkInt(slinha);
+            cout << "Digite o numero de colunas: ";
+            cin >> scoluna;
+            colunas = checkInt(scoluna);
+            cout << "Matriz de " << slinha << " x " << scoluna << " definida.\n";
+            setarSubmatrizes(slinha,scoluna);
             break;
         }
         case 5: {
@@ -131,6 +139,7 @@ int main()
             qtdprimosemserie = contagemSerial();
             serieFim = clock();
             serieTotal = serieFim - serieIni;
+            cout << "Contagem de primos serial completa.\n" << endl;
 
             //configura as threads com a função passada de argumento e o endereço do vetor usado
             for (int i = 0; i < nThreads; i++)
@@ -159,7 +168,7 @@ int main()
             CloseHandle(hMutex1);
             CloseHandle(hMutex2);
 
-            cout << "Contagem de primos completa.\n" << endl;
+            cout << "Contagem de primos paralela completa.\n" << endl;
             break;
         }
         case 7: {
@@ -209,25 +218,39 @@ int checkInt(int num) {
 
 void calculaMatriz(void* submatrizes)
 {
-    //cria um ponteiro pra parametro que recebe os argumentos da função
-    submatriz* subdathread = (submatriz*)submatrizes;
-    int primosLocais = 0;
+    while (true) {
+        int indiceSubmatriz = -1;
 
-    for (int i = subdathread->startline; i < subdathread->endline; i++) {
-        for (int j = 0; j < colunas; j++) {
-            if (ehPrimo(matriz[i][j])) {
-                primosLocais++; 
+        WaitForSingleObject(hMutex1, INFINITE);//inicio seção critica
+        for (int i = 0; i < vetorsubmatriz.size(); i++) {
+            if (!vetorsubmatriz[i].escolhida) {
+                vetorsubmatriz[i].escolhida = true;
+                indiceSubmatriz = i;
+                break;
             }
         }
+        ReleaseMutex(hMutex1); //final seção critica
+
+        if (indiceSubmatriz == -1) {
+            break;
+        }
+
+        //cria um ponteiro pra parametro que recebe os argumentos da função
+        submatriz* subdathread = (submatriz*)submatrizes;
+        int primosLocais = 0;
+
+        for (int i = subdathread->startline; i < subdathread->endline; i++) {
+            for (int j = subdathread->startcol; j < subdathread->endcol; j++) {
+                if (ehPrimo(matriz[i][j])) {
+                    primosLocais++;
+                }
+            }
+        }
+
+        WaitForSingleObject(hMutex2, INFINITE);//inicio seção critica
+        qtdprimos += primosLocais;
+        ReleaseMutex(hMutex2); //final seção critica
     }
-
-    WaitForSingleObject(hMutex1, INFINITE);//inicio seção critica
-    vetorsubmatriz.pop_back();
-    ReleaseMutex(hMutex1); //final seção critica
-
-    WaitForSingleObject(hMutex2, INFINITE);//inicio seção critica
-    qtdprimos += primosLocais;
-    ReleaseMutex(hMutex2); //final seção critica
 
     _endthread();
 }
@@ -274,27 +297,30 @@ int contagemSerial() {
     return nprimos;
 }
 
-void setarSubmatrizes(int nthreads) {
-    int linhaspthread = linhas / nthreads;
-    int restolinhas = linhas % nthreads;
+void setarSubmatrizes(int sublinhas, int subcolunas) {
     submatriz adicionarSubmatriz;
 
     int linhaAtual = 0;
-    for (int i = 0; i < nthreads; i++) {
-        int linhaInicio = linhaAtual;
-        int linhaFim = linhaInicio + linhaspthread;
+    int colunaAtual = 0;
+    int totalsubmatrizes = 0;
 
-        if (i < restolinhas) {
-            linhaFim++;
+    for (linhaAtual = 0; linhaAtual <= linhas; linhaAtual += sublinhas) {
+        for (colunaAtual = 0; colunaAtual <= colunas; colunaAtual += subcolunas) {
+            adicionarSubmatriz.startline = linhaAtual;
+            adicionarSubmatriz.endline = linhaAtual + sublinhas;
+            adicionarSubmatriz.startcol = colunaAtual;
+            adicionarSubmatriz.endcol = colunaAtual + subcolunas;
+
+            cout << "Submatriz " << totalsubmatrizes + 1 << " definida de "
+                << adicionarSubmatriz.startline << " a " << adicionarSubmatriz.endline - 1
+                << " nas linhas e de " << adicionarSubmatriz.startcol << " a "
+                << adicionarSubmatriz.endcol - 1 << " nas colunas." << endl;
+
+            totalsubmatrizes++;
+
+            adicionarSubmatriz.escolhida = false;
+            vetorsubmatriz.push_back(adicionarSubmatriz);
         }
-
-        adicionarSubmatriz.startline = linhaInicio;
-        adicionarSubmatriz.endline = linhaFim;
-        adicionarSubmatriz.escolhida = false;
-        vetorsubmatriz.push_back(adicionarSubmatriz);
-
-        cout << "O tamanho da submatriz" << i << " e: " << adicionarSubmatriz.endline - adicionarSubmatriz.startline << " x " << colunas << endl;
-
-        linhaAtual = linhaFim;
     }
+    cout << "Foram criadas " << totalsubmatrizes << " submatrizes" << endl;
 }
