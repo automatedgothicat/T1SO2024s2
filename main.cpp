@@ -29,7 +29,7 @@ typedef struct {
 HANDLE hMutex1;
 HANDLE hMutex2;
 int** matriz;
-int qtdprimos,qtdprimosemserie;
+int qtdprimos = 0, qtdprimosemserie = 0;
 int linhas, colunas, seed;
 vector<submatriz> vetorsubmatriz;
 
@@ -99,10 +99,6 @@ int main()
             break;
         }
         case 4: {
-            if (nThreads == 0) {
-                cout << "Primeiro Defina as Threads\n" << endl;
-                break;
-            }
             cout << "Digite o numero de linhas: ";
             cin >> slinha;
             slinha = checkInt(slinha);
@@ -125,7 +121,7 @@ int main()
             }
             cout << "Digite o numero de threads a ser utilizado: ";
             cin >> nThreads;
-            seed = checkInt(nThreads);
+            nThreads = checkInt(nThreads);
             cout << "Threads criadas: " << nThreads << endl;
             break;
         }
@@ -135,14 +131,14 @@ int main()
                 break;
             }
             if (nThreads == 0) {
-                cout << "Primeiro Defina as Threads" << endl;
+                cout << "Primeiro defina as Threads" << endl;
                 break;
             }
             serieIni = clock();
             qtdprimosemserie = contagemSerial();
             serieFim = clock();
             serieTotal = serieFim - serieIni;
-            cout << "Contagem de primos serial completa.\n" << endl;
+            cout << "Contagem de primos serial completa." << endl;
 
             //configura as threads com a função passada de argumento e o endereço do vetor usado
             for (int i = 0; i < nThreads; i++)
@@ -161,12 +157,11 @@ int main()
             WaitForMultipleObjects(nThreads, hThread.data(), TRUE, INFINITE);
             paraleloFim = clock();
             paraleloTotal = paraleloFim - paraleloIni;
-
-            cout << "Contagem de primos paralela completa.\n" << endl;
+            cout << "Contagem de primos paralela completa." << endl;
             break;
         }
         case 7: {
-            if (matriz != nullptr) {
+            if (matriz != NULL) {
                 cout << "Contagem em serie:" << endl;
                 cout << "Quantidade de numeros primos: " << qtdprimosemserie << endl;
                 if (serieTotal > 1000) {
@@ -225,7 +220,7 @@ void calculaMatriz(void* submatrizes)
         int indiceSubmatriz = -1;
 
         WaitForSingleObject(hMutex1, INFINITE);//inicio seção critica
-        for (int i = 0; i < vetorsubmatriz.size(); i++) {
+        for (size_t i = 0; i < vetorsubmatriz.size(); i++) {
             if (!vetorsubmatriz[i].escolhida) {
                 vetorsubmatriz[i].escolhida = true;
                 indiceSubmatriz = i;
@@ -313,6 +308,11 @@ void setarSubmatrizes(int sublinhas, int subcolunas) {
             adicionarSubmatriz.endline = min(linhaAtual + sublinhas, linhas);
             adicionarSubmatriz.startcol = colunaAtual;
             adicionarSubmatriz.endcol = min(colunaAtual + subcolunas, colunas);
+
+            if(linhas < 1000 && colunas < 1000){
+                cout << "Submatriz definida de " << adicionarSubmatriz.startline << " a " << adicionarSubmatriz.endline - 1
+                 << " nas linhas e de " << colunaAtual << " a " << min(colunaAtual + subcolunas, colunas) - 1 << " nas colunas." << endl;
+            }
 
             if (adicionarSubmatriz.startline < adicionarSubmatriz.endline &&
                 adicionarSubmatriz.startcol < adicionarSubmatriz.endcol) {
